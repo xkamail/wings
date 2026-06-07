@@ -53,12 +53,21 @@ func (dsl *diskSpaceLimiter) Trigger() {
 	})
 }
 
+// containerPrompt is the styled "container@pterodactyl~ " prompt that the
+// yolks image entrypoint scripts echo before the startup command. Strip it
+// from the output so it never reaches the console stream.
+var containerPrompt = []byte("\x1b[1m\x1b[33mcontainer@pterodactyl~ \x1b[0m")
+
 // processConsoleOutputEvent handles output from a server's Docker container
 // and runs through different limiting logic to ensure that spam console output
 // does not cause negative effects to the system. This will also monitor the
 // output lines to determine if the server is started yet, and if the output is
 // not being throttled, will send the data over to the websocket.
 func (s *Server) processConsoleOutputEvent(v []byte) {
+	if bytes.Contains(v, containerPrompt) {
+		v = bytes.ReplaceAll(v, containerPrompt, nil)
+	}
+
 	// Always process the console output, but do this in a seperate thread since we
 	// don't really care about side-effects from this call, and don't want it to block
 	// the console sending logic.
