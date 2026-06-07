@@ -1,32 +1,16 @@
 package server
 
 import (
-	"fmt"
-	"sync"
 	"time"
-
-	"github.com/mitchellh/colorstring"
 
 	"github.com/pterodactyl/wings/config"
 	"github.com/pterodactyl/wings/system"
 )
 
-// appName is a local cache variable to avoid having to make expensive copies of
-// the configuration every time we need to send output along to the websocket for
-// a server.
-var appName string
-var appNameSync sync.Once
-
 // PublishConsoleOutputFromDaemon sends output to the server console formatted
 // to appear correctly as being sent from Wings.
 func (s *Server) PublishConsoleOutputFromDaemon(data string) {
-	appNameSync.Do(func() {
-		appName = config.Get().AppName
-	})
-	s.Events().Publish(
-		ConsoleOutputEvent,
-		colorstring.Color(fmt.Sprintf("[yellow][bold][%s Daemon]:[default] %s", appName, data)),
-	)
+	s.Events().Publish(ConsoleOutputEvent, data)
 }
 
 // Throttler returns the throttler instance for the server or creates a new one.
